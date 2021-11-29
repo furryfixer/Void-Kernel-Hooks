@@ -1,0 +1,18 @@
+#!/bin/bash
+# /etc/kernel.d/pre-remove/20-rm_grub
+# Remove 50-efibootmgr and 50-grub scripts if they exist.  We are using grub,
+# but using links so that grub.cfg does not need updated with kernel changes
+#
+if [ -e /etc/kernel.d/post-install/50-efibootmgr ]; then
+	rm /etc/kernel.d/post-install/50-efibootmgr
+fi
+if [ -e /etc/kernel.d/post-install/50-grub ]; then
+	rm /etc/kernel.d/post-install/50-grub
+fi
+if [ -e /etc/kernel.d/post-remove/50-efibootmgr ]; then
+	rm /etc/kernel.d/post-remove/50-efibootmgr
+fi
+if [ -e /etc/kernel.d/post-remove/50-grub ]; then
+	rm /etc/kernel.d/post-remove/50-grub
+fi
+exit $?

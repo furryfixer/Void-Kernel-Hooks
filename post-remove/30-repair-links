@@ -1,0 +1,20 @@
+#!/bin/bash
+# /etc/kernel.d/post-remove/30-repair-links
+#
+# Kernel post-remove hook to regenerate links to latest kernel.
+# We are using links so that grub.cfg does not need updated with kernel changes
+# Unlike post-install, run ONLY if links are broken by a removal
+
+if [[ ! -a "/boot/vmlinuz-linux" ]] || [[ ! -a "/boot/initramfs-linux.img" ]]; then
+	## One or both links broken.  Refresh links to highest kernel version in /boot  
+	ls -vr /boot/vmlinuz-[1-9]* > /tmp/vmlinuz.txt      # Sorted with latest version first
+	ls -vr /boot/initramfs-[1-9]* > /tmp/initramfs.txt  # Sorted with latest version first
+		## We do not confirm versions match between vmlinuz and initramfs.
+		## Boot error if versions do not match, but so unlikely, not worth the overhead.
+	read LATEST < /tmp/initramfs.txt
+	ln -sf $LATEST /boot/initramfs-linux.img
+	read LATEST < /tmp/vmlinuz.txt
+	ln -sf $LATEST /boot/vmlinuz-linux
+	echo "Kernel booted by grub.cfg, <vmlinuz-linux> successfully relinked to "$LATEST
+fi
+exit $?

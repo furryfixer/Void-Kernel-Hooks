@@ -1,0 +1,7 @@
+#!/bin/bash
+# /etc/kernel.d/pre-install/30-vkpurge
+# Kernel pre-remove hook to remove next to last kernel (and others) to the new kernel
+# being installed. Preserve link (vmlinuz-linux) by only purging numeric kernel names
+#
+vkpurge rm all
+exit 0
