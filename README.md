@@ -8,4 +8,4 @@ In order to work, /boot/grub/grub.cfg must be edited to default to the desired l
 - linux	  /boot/vmlinuz-linux
 - initrd	/boot/initramfs-linux.img
 
-A vkpurge hook is included which will preserve at least the most recent previous kernel, but links for grub are changed to the newest kernel by default.
+A vkpurge hook is included which will delete obsolete kernels, but preserve at least the most recent previous kernel.  Links for grub are changed to the newest kernel by default.
