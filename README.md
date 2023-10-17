@@ -5,7 +5,7 @@ The scripts included here are designed to be placed in respective subdirectories
 
 In order to work, /boot/grub/grub.cfg must be edited to default to the desired link names.  As written, the scripts assume the Arch conventions, namely
 
-- linux	  /boot/vmlinuz-linux
-- initrd	/boot/initramfs-linux.img
+- linux	>     /boot/vmlinuz-linux
+- initrd >    /boot/initramfs-linux.img
 
 A vkpurge hook is included which will delete obsolete kernels, but preserve at least the most recent previous kernel.  Links for grub are changed to the newest kernel by default.
