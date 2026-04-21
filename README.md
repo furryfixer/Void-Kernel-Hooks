@@ -9,3 +9,5 @@ In order to work, /boot/grub/grub.cfg must be edited to default to the desired l
 - initrd >    /boot/initramfs-linux.img
 
 A vkpurge hook is included which will delete obsolete kernels, but preserve at least the most recent previous kernel.  Links for grub are changed to the highest remaining kernel version by default.
+
+Note that pre-existing hooks "50-efibootmgr" and "50-grub" will be removed, because running update-grub or changing bootloader is unneccesary when using these hooks. This allows all custom edits to /boot/grub.cfg to be preserved if desired, and may significantly speed up the kernel update process if there are many bootable partitions. 
