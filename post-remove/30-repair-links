@@ -1,7 +1,7 @@
 #!/bin/bash
-# /etc/kernel.d/post-remove/30-repair-links
 #
-# Kernel post-remove hook to regenerate links to latest kernel.
+# Kernel post-remove hook to regenerate broken links set previously by 
+# 30-update-links post-install hook. Defaults to highest remaining version.
 # We are using links so that grub.cfg does not need updated with kernel changes
 # Unlike post-install, run ONLY if links are broken by a removal
 
