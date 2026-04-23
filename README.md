@@ -27,7 +27,7 @@ In summary, disabling grub updates may be desirable for two reasons:
 (1) Speed! Particularly if os-prober will need to examine many disks/partitions.  
 (2) The grub.cfg file has significant edits that we want to preserve
 
-The install script will offer the option for dracut to continue triggering update-grub, in which case it will still pick up the generic names as defaults. When first installed, the links will initially point to the highest kernel version found in the /boot directory, and this will become the default. After this, the links will point to the most recently installed kernel, regardless of whether the version is higher than the previous one (this was not true prior to recent updates).
+The install script will offer the option for dracut to continue triggering update-grub, in which case it will still pick up the generic names as defaults. When first installed, the links will initially point to the currently running kernel version if found in the /boot directory, and this will become the default. The links will afterward point to the most recently installed kernel, regardless of whether the version is higher than the previous one (this was not true prior to recent updates).
 
 A vkpurge hook is included which will delete obsolete kernels, but preserve the kernel running at the time of the update (usually the most recent previous kernel). This prevents filling up the /boot directory with obsolete kernels.
 
