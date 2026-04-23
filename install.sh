@@ -100,16 +100,11 @@ for (( i=0; i<$j; i++ )); do
 	chmod 0744 /etc/kernel.d/${targetfiles[$i]}
 done
 if [[ ! -a "/boot/vmlinuz-linux" ]] || [[ ! -a "/boot/initramfs-linux.img" ]]; then
-	## One or both links broken/missing.  Link to highest kernel version in /boot  
-	ls -vr /boot/vmlinuz-[1-9]* > /tmp/vmlinuz.txt      # Sorted with latest version first
-	ls -vr /boot/initramfs-[1-9]* > /tmp/initramfs.txt  # Sorted with latest version first
-		## We do not confirm versions match between vmlinuz and initramfs.
-		## Boot error if versions do not match, but so unlikely, not worth the overhead.
-	read LATEST < /tmp/initramfs.txt
-	ln -sf $LATEST /boot/initramfs-linux.img
-	read LATEST < /tmp/vmlinuz.txt
-	ln -sf $LATEST /boot/vmlinuz-linux
-	echo "Kernel booted by grub.cfg, <vmlinuz-linux> successfully linked to "$LATEST
+	## Create missing links to the currently running kernel version in /boot  
+	VRSN=$(uname -r)
+	ln -sf /boot/initramfs-${VRSN}.img  /boot/initramfs-linux.img
+	ln -sf /boot/vmlinuz-${VRSN} /boot/vmlinuz-linux
+	echo "Kernel booted by grub.cfg, <vmlinuz-linux> successfully relinked to "$VRSN
 fi
 echo "
 The initial links created will default to the highest version kernel
