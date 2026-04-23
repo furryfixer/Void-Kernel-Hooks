@@ -12,5 +12,4 @@ NEW_VMLINUZ="vmlinuz-${VERSION}"
 ln -sf /boot/${NEW_INITRAMFS} /boot/initramfs-linux.img
 ln -sf /boot/${NEW_VMLINUZ} /boot/vmlinuz-linux
 echo "Kernel booted by grub.cfg, <vmlinuz-linux> successfully relinked to "$NEW_VMLINUZ
-#echo $VERSION >> /etc/kernel-needs-mods # local mod
 exit $?
