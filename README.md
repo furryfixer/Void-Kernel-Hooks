@@ -10,7 +10,7 @@ Then from the download directory, run
 
 - chmod +x install.sh
 - chmod +x uninstall.sh
-- ./install.sh
+- sudo ./install.sh
 
 In order to take advantage of the invariant kernel names, /boot/grub/grub.cfg may be edited to default to the generic link names. As written, the scripts assume the Arch conventions, namely
 
