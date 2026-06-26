@@ -1,9 +1,0 @@
-#!/bin/bash
-#
-# Kernel pre-remove hook to remove all but two kernels, preserving
-# the currently running one, and the new one being installed.
-# This also destroys previous links, which post-install hook
-# should regenerate.
-
-vkpurge rm all
-exit 0
