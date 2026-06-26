@@ -1,2 +1,2 @@
 theme: jekyll-theme-cayman
-title: Add to hooks for Void Linux, which keep an invariant name for grub, set default to follow kernel meta packages or series, and remove older kerrnels from /boot directory.
+title: Added hooks for Void Linux, which keep an invariant name for grub, set default to follow kernel meta packages or series, and remove older kerrnels from /boot directory.
