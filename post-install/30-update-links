@@ -1,15 +1,77 @@
 #!/bin/bash
+# /etc/kernel.d/post-install/30-update-links
+# Part of Void-Kernel-Hooks, under GPL-3.0 license
+# Generates links to a default xbps kernel package or series.
+# If no default series is set, or designated default not
+# installed, the current (most recent) kernel update will
+# become boot default. Set preferred default seriesby running
+# the "kernel-set-default" script. Link names "vmlinuz-linux"
+# and "initramfs-linux.img" are invariant. 
 #
-# Kernel post-install hook to regenerate links to latest kernel.
-# We are using links so that grub.cfg does not need updated with kernel changes
-
-## Refresh links to newly installed kernel in /boot  
-PKGNAME="$1"
+# PKGNAME="$1" # Not used
 VERSION="$2"
-NEW_INITRAMFS="initramfs-${VERSION}.img"
-NEW_VMLINUZ="vmlinuz-${VERSION}"
 
-ln -sf /boot/${NEW_INITRAMFS} /boot/initramfs-linux.img
-ln -sf /boot/${NEW_VMLINUZ} /boot/vmlinuz-linux
-echo "Kernel booted by grub.cfg, <vmlinuz-linux> successfully relinked to "$NEW_VMLINUZ
+if [ -s /etc/krnl-series-default ]; then 
+	series_def_verbose=$(cat /etc/krnl-series-default)
+	series_default=$(cut -d' ' -f1 <<< "$series_def_verbose") 
+	if grep -q 'meta package' <<< "$series_def_verbose" ; then
+		pkgdefault=$(xbps-query -x $series_default | head -n1 | cut -d'>' -f1)
+	else
+		pkgdefault=$series_default
+	fi
+	# is installed/valid?
+	valid_pkg=$(xbps-query -p state $pkgdefault)
+	if [[ $valid_pkg = "installed" ]] || [[ $valid_pkg = "unpacked" ]]; then
+		dflt_versn=$(xbps-query -p pkgver $pkgdefault | cut -d'-' -f2)
+		linkvm_versn=$(readlink /boot/vmlinuz-linux | cut -d'-' -f2)
+		linkinit_versn=$(readlink /boot/initramfs-linux.img | cut -d'-' -f2 | sed s/.img//)
+		if [[ $linkvm_versn = $dflt_versn ]] && [[ $linkinit_versn = $dflt_versn ]]; then
+			VERSION="" # make no change
+			old_default=$(readlink /boot/vmlinuz-linux | cut -d'/' -f3)
+			echo "==========
+The boot default xbps kernel series is:  \"$series_def_verbose\"
+Default link \"vmlinuz-linux\" to \"$old_default\" unchanged"
+		else 
+			VERSION=$dflt_versn
+			echo "==========
+The \"vmlinuz-linux\" default will link to the current kernel for
+--  $series_def_verbose   --"
+		fi
+	else
+		rm -f /etc/krnl-series-default
+		echo "==========
+Default \"${series_def_verbose}\" is invalid or not currently installed
+Default kernel series reset to none.
+The last kernel installed or updated will become boot default."
+	fi
+else
+	echo "==========
+Warning!  No preferred kernel series default exists
+The last kernel installed or updated will become boot default"
+fi 
+if [[ $VERSION != "" ]]; then
+	ln -sf /boot/initramfs-${VERSION}.img /boot/initramfs-linux.img
+	ln -sf /boot/vmlinuz-${VERSION} /boot/vmlinuz-linux
+fi
+if [[ ! -e "/boot/initramfs-linux.img"  ]] || [[ ! -e "/boot/vmlinuz-linux" ]]; then
+	# existing or new Links are broken
+	echo "Missing expected kernel or initramfs files
+Linking default to latest fallback in /boot" 
+	ls -c /boot/vmlinuz* | grep -v 'linux' > /tmp/vmlinuz
+	while IFS= read -r vmline; do
+    		versn_match=$(cut -d'-' -f2 <<< $vmline)
+		if [[ -e "/boot/initramfs-${versn_match}.img" ]]; then
+			ln -sf /boot/initramfs-${versn_match}.img /boot/initramfs-linux.img 
+			ln -sf $vmline /boot/vmlinuz-linux
+			break
+		fi
+	done </tmp/vmlinuz
+	rm -f /tmp/vmlinuz
+fi
+echo "To change default setting, run:  \"kernel-set-default\"
+=========="
+linkvm=$(readlink /boot/vmlinuz-linux)
+linkinit=$(readlink /boot/initramfs-linux.img) 
+echo "/boot/initramfs-linux.img -> $linkvm
+/boot/vmlinuz-linux -> $linkinit"
 exit $?
