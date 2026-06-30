@@ -147,7 +147,7 @@ meta package (linux|linux-lts|linux-mainline) or a specific series
 astray by updates to non-default packages, which may install kernels
 with later/higher version numbers in /boot. If \"no series\" is
 chosen, the default will link to the kernel most recently installed
-or updated by xbps, regarless of package/series.
+or updated by xbps, regardless of package/series.
 
 Press <Enter> to continue."
 read a
