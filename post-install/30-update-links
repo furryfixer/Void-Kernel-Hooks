@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 # /etc/kernel.d/post-install/30-update-links
 # Part of Void-Kernel-Hooks, under GPL-3.0 license
 # Generates links to a default xbps kernel package or series.
