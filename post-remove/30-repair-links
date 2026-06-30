@@ -1,20 +1,21 @@
 #!/bin/bash
-#
-# Kernel post-remove hook to regenerate broken links set previously by 
-# 30-update-links post-install hook. Defaults to highest remaining version.
-# We are using links so that grub.cfg does not need updated with kernel changes
-# Unlike post-install, run ONLY if links are broken by a removal
+# /etc/kernel.d/post-remove/30-repair-links
+# Part of Void-Kernel-Hooks, under GPL-3.0 license
+# Hook to reset broken links set previously by 30-update-links
+# If broken, links to most recently updated kernel.
 
-if [[ ! -a "/boot/vmlinuz-linux" ]] || [[ ! -a "/boot/initramfs-linux.img" ]]; then
-	## One or both links broken.  Refresh links to highest kernel version in /boot  
-	ls -vr /boot/vmlinuz-[1-9]* > /tmp/vmlinuz.txt      # Sorted with latest version first
-	ls -vr /boot/initramfs-[1-9]* > /tmp/initramfs.txt  # Sorted with latest version first
-		## We do not confirm versions match between vmlinuz and initramfs.
-		## Boot error if versions do not match, but so unlikely, not worth the overhead.
-	read LATEST < /tmp/initramfs.txt
-	ln -sf $LATEST /boot/initramfs-linux.img
-	read LATEST < /tmp/vmlinuz.txt
-	ln -sf $LATEST /boot/vmlinuz-linux
-	echo "Kernel booted by grub.cfg, <vmlinuz-linux> successfully relinked to "$LATEST
+if [[ ! -e "/boot/initramfs-linux.img"  ]] || [[ ! -e "/boot/vmlinuz-linux" ]]; then
+	# existing links are broken
+	echo "Link fallback after kernel removal. May be temporary with reinstalls"
+	ls -c /boot/vmlinuz* | grep -v 'linux' > /tmp/vmlinuz
+	while IFS= read -r vmline; do
+    		versn_match=$(cut -d'-' -f2 <<< $vmline)
+		if [[ -e "/boot/initramfs-${versn_match}.img" ]]; then
+			ln -svf /boot/initramfs-${versn_match}.img /boot/initramfs-linux.img 
+			ln -svf $vmline /boot/vmlinuz-linux
+			break
+		fi
+	done < /tmp/vmlinuz
+	rm -f /tmp/vmlinuz
 fi
 exit $?
