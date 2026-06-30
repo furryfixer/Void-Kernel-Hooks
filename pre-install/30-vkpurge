@@ -1,9 +1,14 @@
 #!/bin/bash
-#
-# Kernel pre-remove hook to remove all but two kernels, preserving
-# the currently running one, and the new one being installed.
-# This also destroys previous links, which post-install hook
-# should regenerate.
+# /etc/kernel.d/pre-install/30-vkpurge
+# Part of Void-Kernel-Hooks, under GPL-3.0 license
+# Hook to remove all but one kernel for each currently
+# installed kernel series xbps package. The currently
+# running kernel and vmlinuz-linux links will be
+# preserved as well
 
-vkpurge rm all
+vkpurge list | grep -v linux > /tmp/vkplist
+while IFS= read -r line; do 
+	vkpurge rm $line
+done < /tmp/vkplist
+rm /tmp/vkplist
 exit 0
