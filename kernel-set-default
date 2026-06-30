@@ -1,0 +1,131 @@
+#!/bin/bash
+clear
+echo "
+######################################################
+# KERNEL-SET-DEFAULT by furryfixer (William Rueger)
+# For Void Linux only! Part of Void-Kernel-Hooks and
+# may not function as expected without it.
+# Provided under GPL-3.0 License
+###################################################### 
+
+Run with root permissions to establish the kernel package
+series to be used as default for grub boot. The goal is for
+the default to follow updates to the relevant xbps kernel
+package, instead of locking to a specific (older) subrelease. 
+The default may be a meta package (linux|linux-lts|linux-mainline)
+or a specific series (e.g linux6.18). The default will stay
+linked to one series without being led astray by updates from
+non-default packages, which may install kernels with later/higher
+numbers in /boot. If \"no series\" is chosen, the default will
+link to the kernel most recently installed or updated by xbps.
+
+Press <Enter> to continue."
+read a
+# user must be root
+if [ "$(id -u)" != "0" ]; then
+	echo "Installation must be run as root. Exiting..."
+	exit 1
+fi
+if ! ls -A /boot >/dev/null 2>&1 ; then
+	echo "/boot directory is not mounted or is empty.
+Exiting..."
+	exit 1
+fi
+echo "
+Default names will be the links  \"vmlinuz-linux\" and
+\"initramfs-linux.img\" corresponding to Arch conventions.
+Using this script without Void-Kernel-Hooks will still
+establish a default, but this will be permanent until the script
+is run again, and links will not change with updates. 
+
+DANGER! The defaults are links, so the risk is low, but we are
+working in the /boot directory. Unexpected errors in execution
+could make the system unbootable. More likely, only the new default
+would be unbootable.
+ 
+It is assumed that the /boot directory is mounted, and the kernels
+to be booted are stored there.
+------------------------------
+Do you wish to continue?
+
+Press [y/n] and <ENTER>."
+read yn
+[[ $yn != [Yy] ]] && exit 1
+xbps-query -l | grep 'kernel meta' | awk '{ print $2 }' | xargs xbps-uhelper getpkgname > /tmp/kern-series
+sed -i 's/$/ meta package/' /tmp/kern-series
+xbps-query -l | grep 'linux' | grep 'series)' | grep -v 'headers' | awk '{ print $2 }' | xargs xbps-uhelper getpkgname >> /tmp/kern-series
+echo "no series (default = kernel updated last by xbps)" >> /tmp/kern-series
+clear
+echo "If a desired kernel package does not appear in this list,
+you must install it with xbps-install first.
+"
+i=1
+while IFS= read -r kseries; do
+	echo "(${i}) "$kseries
+	((i++))
+done < "/tmp/kern-series"
+echo "
+From the above list, enter the number from the first column for
+the kernel series that you would like boot default to track,
+followed by <Enter> key"
+read num
+kdef_verbose=$(cat /tmp/kern-series | head -n $num | tail -n1)
+echo "
+The default series will be
+
+\"$kdef_verbose\"
+
+Is this correct? Press (y/n) <Enter>"
+read yn
+if [[ $yn = [Yy] ]]; then
+	if grep -q 'no series' <<< $kdef_verbose ; then # no default
+		rm -f /etc/krnl-series-default
+		kdefault=""
+	else
+		echo $kdef_verbose > /etc/krnl-series-default
+		kdefault=$(cut -d' ' -f1 <<< $kdef_verbose)	
+		if grep -q 'meta package' <<< $kdef_verbose ; then
+			pkgname=$(xbps-query -x $kdefault | head -n1 | cut -d'>' -f1)
+		else
+			pkgname=$kdefault	
+		fi
+		pkgver=$(xbps-query -p pkgver $pkgname | cut -d'-' -f2)
+		INITRAMFS="initramfs-${pkgver}.img"
+		VMLINUZ="vmlinuz-${pkgver}"
+		if [ ! -e "/boot/$INITRAMFS" ] || [ ! -e "/boot/$VMLINUZ" ]; then
+			echo "
+Matching kernel version or initramfs in /boot does not exist for $kdefault.
+Package may need updated or is broken."
+			kdefault=""
+		else
+			ln -svf /boot/${INITRAMFS} /boot/initramfs-linux.img
+			ln -svf /boot/${VMLINUZ} /boot/vmlinuz-linux
+			echo "
+The \"vmlinuz-linux\" default now linked to the current kernel for
+--  $kdef_verbose  --"
+		fi
+	fi
+	rm -f /tmp/kern-series
+else
+	echo "
+Start script again if desired.
+Aborting..."
+	exit 1
+fi
+if [[ $kdefault = "" ]]; then
+	echo "Linking default to latest kernel in /boot" 
+	ls -c /boot/vmlinuz* | grep -v 'linux' > /tmp/vmlinuz
+	while IFS= read -r vmline; do
+    		versn_match=$(cut -d'-' -f2 <<< $vmline)
+		if [[ -e "/boot/initramfs-${versn_match}.img" ]]; then
+			ln -svf /boot/initramfs-${versn_match}.img /boot/initramfs-linux.img 
+			ln -svf $vmline /boot/vmlinuz-linux
+			break
+		fi
+	done < /tmp/vmlinuz
+	rm -f /tmp/vmlinuz
+fi
+echo "
+Exiting..."
+exit 0
+
