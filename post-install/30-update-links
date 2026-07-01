@@ -4,7 +4,7 @@
 # Generates links to a default xbps kernel package or series.
 # If no default series is set, or designated default not
 # installed, the current (most recent) kernel update will
-# become boot default. Set preferred default seriesby running
+# become boot default. Set preferred default series by running
 # the "kernel-set-default" script. Link names "vmlinuz-linux"
 # and "initramfs-linux.img" are invariant. 
 #
