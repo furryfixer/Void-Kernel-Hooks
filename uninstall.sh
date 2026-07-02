@@ -12,12 +12,13 @@ clear
 echo "VOID_KERNEL_HOOKS Uninstall
 
 This script will remove extra /etc/kernel.d/ hooks installed by
-Void-Kernel-Hooks. All other associated files will be removed with the
-exception of two links in /boot. These are NOT removed, because this
-could make the partition unbootable, especially wih a stripped-down
-customized \"grub.cfg\". Also, if you boot from another partition,
-running update-grub on this one will NOT make this partition bootable
-if it otherwise would not boot.
+Void-Kernel-Hooks. If grub or efibootmgr hooks are missing, their
+respective packages will be reinstalled. All other associated files
+will be removed with the exception of two links in /boot. These are
+NOT removed, because this could make the partition unbootable,
+especially wih a stripped-down customized \"grub.cfg\". Also, if you
+boot from another partition, running update-grub on this one will NOT
+make this partition bootable.
 
 For this reason, you will need to assume the responsibility of manually
 removing \"\boot\vmlinuz-linux\" and \"\boot\initramfs-linux.img\" and
@@ -33,6 +34,14 @@ read yn
 echo "
 Uninstalling Void-Kernel-Hooks...
 "
+grub_state=$(xbps-query -p state grub)
+efi_state=$(xbps-query -p state efibootmgr)
+if [[ $grub_state = "installed" ]]; then
+	[[ ! -f /etc/kernel.d/post-install/50-grub ]] && xbps-install -yf grub
+fi
+if [[ $efi_state = "installed" ]]; then
+	[[ ! -f /etc/kernel.d/post-install/50-efibootmgr ]] && xbps-install -yf efibootmgr
+fi
 rm -vf /etc/kernel.d/post-install/30-update-links
 rm -vf /etc/kernel.d/pre-install/30-vkpurge
 rm -vf /etc/kernel.d/post-remove/30-repair-links
@@ -42,6 +51,7 @@ rm -vf /etc/krnl-series-default
 rm -vf /usr/local/bin/kernel-set-default
 rm -vf /usr/bin/kernel-set-default
 rm -vf /etc/knrl-series-default
+
 echo "
 Files installed by Void-Kernel-Hooks except links in /boot successfully removed.
 
