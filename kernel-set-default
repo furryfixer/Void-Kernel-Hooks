@@ -51,9 +51,14 @@ Do you wish to continue?
 Press [y/n] and <ENTER>."
 read yn
 [[ $yn != [Yy] ]] && exit 1
-xbps-query -l | grep 'kernel meta' | awk '{ print $2 }' | xargs xbps-uhelper getpkgname > /tmp/kern-series
-sed -i 's/$/ meta package/' /tmp/kern-series
-xbps-query -l | grep 'linux' | grep 'series)' | grep -v 'headers' | awk '{ print $2 }' | xargs xbps-uhelper getpkgname >> /tmp/kern-series
+rm -f /tmp/kern-series
+if xbps-query -l | grep -q 'kernel meta' ; then # Test for null to prevent error next line
+	xbps-query -l | grep 'kernel meta' | awk '{ print $2 }' | xargs xbps-uhelper getpkgname > /tmp/kern-series
+	sed -i 's/$/ meta package/' /tmp/kern-series
+fi
+if xbps-query -l | grep 'linux' | grep 'series)' | grep -vq 'headers' ; then # Test for null output
+	xbps-query -l | grep 'linux' | grep 'series)' | grep -v 'headers' | awk '{ print $2 }' | xargs xbps-uhelper getpkgname >> /tmp/kern-series
+fi
 echo "no series (default = kernel updated last by xbps)" >> /tmp/kern-series
 clear
 echo "If a desired kernel package does not appear in this list,
@@ -70,6 +75,7 @@ the kernel series that you would like boot default to track,
 followed by <Enter> key"
 read num
 kdef_verbose=$(cat /tmp/kern-series | head -n $num | tail -n1)
+[[ $kdef_verbose = "" ]] && kdef_verbose="no series (default = kernel updated last by xbps)"
 echo "
 The default series will be
 
@@ -128,4 +134,3 @@ fi
 echo "
 Exiting..."
 exit 0
-
