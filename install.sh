@@ -56,19 +56,38 @@ suitable grub.cfg for this option, whether custom editing or not.
 
 Given this information, Disable dracut's use of update-grub?
 Press [y/n] and <ENTER>."
-read yn
+read yn				
 if [[ $yn = [Yy] ]]; then
 	rm_grub_hook=1
 	echo "
-grub-update will not run with dracut"
+update-grub will NOT run with dracut
+
+Press <Enter> to continue..."
+	read a
 else
 	rm_grub_hook=0
 	echo "
-grub-update will continue to run with dracut"
+update-grub will continue to run with dracut.
+If hooks previously removed, grub/efibootmgr will be reinstalled.
+
+Press <Enter> to continue..."
+	read a
+	grub_state=$(xbps-query -p state grub)
+	efi_state=$(xbps-query -p state efibootmgr)
+	if [[ $grub_state = "installed" ]] && [[ ! -f /etc/kernel.d/post-install/50-grub ]]; then
+		echo "
+Reinstalling grub to restore grub hooks"
+		xbps-install -yf grub
+	fi
+	if [[ $efi_state = "installed" ]] && [[ ! -f /etc/kernel.d/post-install/50-efibootmgr ]]; then
+		echo "
+Reinstalling efibootmgr to restore efibootmgr hooks"
+		xbps-install -yf efibootmgr
+	fi
 fi
-echo "Press <Enter> to continue..."
-read a
-echo "Installing Void kernel hooks...
+echo "
+
+Installing Void kernel hooks...
 Collating new files...
 "
 echo "/etc/kernel.d/post-install/30-update-links
@@ -133,11 +152,12 @@ fi
 cp -v kernel-set-default ${prefix}/kernel-set-default
 chmod 0755 ${prefix}/kernel-set-default
 echo "
-If no errors, hooks were successfully installed, but a first-run version
-of \"kernel-set-default\" is needed to activate them, and follows now.
-Press <Enter> to continue..."
-read a
-
+------------------------------------------------------
+If no errors, hooks were successfully installed, but a
+first-run version of \"kernel-set-default\" is needed
+to activate them, and follows below.
+------------------------------------------------------
+"
 echo "
 You will now be asked which kernel package series is to be used
 as default for grub boot. The default will follow updates to
@@ -149,30 +169,21 @@ with later/higher version numbers in /boot. If \"no series\" is
 chosen, the default will link to the kernel most recently installed
 or updated by xbps, regardless of package/series.
 
-Press <Enter> to continue."
+Press <Enter> to continue..."
 read a
-# user must be root
-if [ "$(id -u)" != "0" ]; then
-	echo "Installation must be run as root. Exiting"
-	exit 1
-fi
 if ! ls -A /boot >/dev/null 2>&1 ; then
 	echo "/boot directory is not mounted or is empty.
 Exiting..."
 	exit 1
 fi
-echo "
-Default names will be the links  \"vmlinuz-linux\" and
-\"initramfs-linux.img\" corresponding to Arch conventions.
-It is assumed that the /boot directory is mounted, and the kernels
-to be booted are stored there.
-------------------------------
-
-Press <Enter> to continue..."
-
-xbps-query -l | grep 'kernel meta' | awk '{ print $2 }' | xargs xbps-uhelper getpkgname > /tmp/kern-series
-sed -i 's/$/ meta package/' /tmp/kern-series
-xbps-query -l | grep 'linux' | grep 'series)' | grep -v 'headers' | awk '{ print $2 }' | xargs xbps-uhelper getpkgname >> /tmp/kern-series
+rm -f /tmp/kern-series
+if xbps-query -l | grep -q 'kernel meta' ; then ##  Test for null to prevent error msg next
+	xbps-query -l | grep 'kernel meta' | awk '{ print $2 }' | xargs xbps-uhelper getpkgname > /tmp/kern-series
+	sed -i 's/$/ meta package/' /tmp/kern-series
+fi
+if xbps-query -l | grep 'linux' | grep 'series)' | grep -vq 'headers' ; then ## Test for null output
+	xbps-query -l | grep 'linux' | grep 'series)' | grep -v 'headers' | awk '{ print $2 }' | xargs xbps-uhelper getpkgname >> /tmp/kern-series
+fi
 echo "no series (default = kernel updated last by xbps)" >> /tmp/kern-series
 clear
 echo "
@@ -193,6 +204,7 @@ followed by <Enter> key
 "
 read num
 kdef_verbose=$(cat /tmp/kern-series | head -n $num | tail -n1)
+[[ $kdef_verbose = "" ]] && kdef_verbose="no series (default = kernel updated last by xbps)"
 echo "
 The default series will be
 
