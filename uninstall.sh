@@ -31,17 +31,21 @@ Do you wish to continue?
 Press [Y/N] and <ENTER>."
 read yn
 [[ $yn != [Yy] ]] && exit 1
+grub_state=$(xbps-query -p state grub)
+efi_state=$(xbps-query -p state efibootmgr)
+if [[ $grub_state = "installed" ]] && [[ ! -f /etc/kernel.d/post-install/50-grub ]]; then
+	echo "
+Reinstalling grub to restore grub hooks"
+	xbps-install -yf grub
+fi
+if [[ $efi_state = "installed" ]] && [[ ! -f /etc/kernel.d/post-install/50-efibootmgr ]]; then
+	echo "
+Reinstalling efibootmgr to restore efibootmgr hooks"
+	xbps-install -yf efibootmgr
+fi
 echo "
 Uninstalling Void-Kernel-Hooks...
 "
-grub_state=$(xbps-query -p state grub)
-efi_state=$(xbps-query -p state efibootmgr)
-if [[ $grub_state = "installed" ]]; then
-	[[ ! -f /etc/kernel.d/post-install/50-grub ]] && xbps-install -yf grub
-fi
-if [[ $efi_state = "installed" ]]; then
-	[[ ! -f /etc/kernel.d/post-install/50-efibootmgr ]] && xbps-install -yf efibootmgr
-fi
 rm -vf /etc/kernel.d/post-install/30-update-links
 rm -vf /etc/kernel.d/pre-install/30-vkpurge
 rm -vf /etc/kernel.d/post-remove/30-repair-links
