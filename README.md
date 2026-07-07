@@ -3,7 +3,7 @@ Scripts specifically for Void Linux, to be placed in various /etc/kernel.d/ subd
 
 **Extensively rewritten 6/2026! A new "kernel-set-default" script must be run, as fundamental changes were made to the way default links are assigned (see below)**
 
-The default will link to the most recently installed/updated kernel for a chosen xbps package or meta package, regardless of higher/lower version number. **This allows the default to upgrade but track a desired kernel meta package or series**. e.g. **linux, linux-lts, linux-mainline, linux6.12.** Therefore, multiple kernel packages and their associated kernels may be present and updating, without altering the default track that the administrator wishes to boot by default. These scripts are provided under the GPL-3.0 license.
+The default will link to the most recently installed/updated kernel for a chosen xbps package or meta package, regardless of higher/lower version number. **This allows the default to upgrade but track a desired kernel meta package or series**. e.g. **linux, linux-lts, linux-mainline, linux6.12.** Multiple kernel packages and their associated kernels may be present and updating, without altering the default track that the administrator wishes to boot by default. These scripts are provided under the GPL-3.0 license.
 
 ### Features
 - Name assigned to default kernel never changes (update-grub becomes optional)
