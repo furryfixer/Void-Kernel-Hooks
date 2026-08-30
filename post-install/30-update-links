@@ -72,6 +72,6 @@ echo "To change default setting, run:  \"kernel-set-default\"
 =========="
 linkvm=$(readlink /boot/vmlinuz-linux)
 linkinit=$(readlink /boot/initramfs-linux.img) 
-echo "/boot/initramfs-linux.img -> $linkvm
-/boot/vmlinuz-linux -> $linkinit"
+echo "/boot/initramfs-linux.img -> $linkinit
+/boot/vmlinuz-linux -> $linkvm"
 exit $?
