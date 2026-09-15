@@ -17,7 +17,10 @@ desired kernel meta package or series. Examples include
 (linux|linux-lts|linux-mainline|linux6.12). Default links will
 ignore upgrades to other kernels in /boot regardless of version
 numbers. This allows multiple kernel packages to co-exist without
-randomly altering the boot default series. To undo all changes,
+randomly altering the boot default series. With the \"no series\"
+option, the unchanging link name will point to the most recently
+updated kernel, regardless of series, which matches the previous
+behavior for Void-Kernel-Hooks scripts. To undo all changes,
 run the provided \"uninstall.sh\" script.
 
 Do you wish to continue?
@@ -44,15 +47,20 @@ Exiting...
 fi
 echo "
 The option is offered to prevent dracut from calling
-update-grub/grub-mkconfig, as updating grub becomes unnecessary
-when using these hooks. Even when disabled, you will retain the
-ability to run \"sudo update-grub\" at any time if needed. If
-approved, pre-existing hooks \"50-efibootmgr\" and \"50-grub\"
-will be removed. This allows any custom edits to grub.cfg to
-be preserved, and may significantly speed up dracut if there
-are many bootable partitions and os-prober is in use. See
-README.md or Github repo Readme for guidance on generating a
-suitable grub.cfg for this option, whether custom editing or not.
+update-grub/grub-mkconfig after kernel updates, since this is
+unnecessary when using these hooks. Even when disabled, you
+retain the ability to run \"sudo update-grub\" at any time.
+Be aware that if the grub.cfg/menu pointing to this partition
+resides on another boot partition, we are not generating it here,
+and you will not be preventing update-grub from running on THAT 
+partition by hooks or option settings on THIS one. This may be all
+the more reason to turn off update-grub when updating kernels on
+THIS partition. If approved, pre-existing hooks \"50-efibootmgr\"
+and \"50-grub\" will be removed. This allows any custom edits to
+grub.cfg to be preserved, and may significantly speed up updates
+if there are many bootable partitions and os-prober is in use.
+See README.md or Github repo Readme for guidance on generating
+a suitable grub.cfg for this option, whether custom editing or not.
 
 Given this information, Disable dracut's use of update-grub?
 Press [y/n] and <ENTER>."
@@ -224,9 +232,10 @@ if [[ $yn = [Yy] ]]; then
 		else
 			pkgname=$kdefault	
 		fi
-		pkgver=$(xbps-query -p pkgver $pkgname | cut -d'-' -f2)
+		pkgver=$(xbps-query -p pkgver $pkgname | cut -d'-' -f2-)
 		INITRAMFS="initramfs-${pkgver}.img"
 		VMLINUZ="vmlinuz-${pkgver}"
+		[ ! -e "/boot/$VMLINUZ" ] && VMLINUZ="vmlinux-${pkgver}" # In case future "vmlinux" series
 		if [ ! -e "/boot/${INITRAMFS}" ] || [ ! -e "/boot/${VMLINUZ}" ]; then
 			echo "
 Matching kernel version or initramfs in /boot does not exist for $kdefault.
@@ -245,17 +254,19 @@ Install will finish without default set, but you will need to run
 	rm -f /tmp/kern-series
 else
 	echo "
-A DEFAULT WAS NOT SET! Install will finish without it, but you
-should consider running \"kernel-set-default\" separately after.
+A DEFAULT WAS NOT SET! If only updating one kernel at a time, and no 
+meta-package, this is fine. The default will always link the most recent 
+kernel installed. Otherwise, consider running \"kernel-set-default\" 
+separately after this script exits.
 	
 Press <Enter>..."
 	read a
 fi
 if [[ $kdefault = "" ]]; then
 	echo "Linking default to latest kernel in /boot" 
-	ls -c /boot/vmlinuz* | grep -v 'linux' > /tmp/vmlinuz
+	ls -c /boot/vmlinu* | grep -v '\-linux' > /tmp/vmlinuz
 	while IFS= read -r vmline; do
-    		versn_match=$(cut -d'-' -f2 <<< $vmline)
+    		versn_match=$(cut -d'-' -f2- <<< $vmline)
 		if [[ -e "/boot/initramfs-${versn_match}.img" ]]; then
 			ln -svf /boot/initramfs-${versn_match}.img /boot/initramfs-linux.img 
 			ln -svf $vmline /boot/vmlinuz-linux
@@ -267,10 +278,6 @@ fi
 ## End kernel-set-default first run
 echo "
 If no errors, Void-Kernel-Hooks installation succeeded."
-if [ ! -f /etc/krnl-series-default ]; then
-	echo "No default series or meta package was set.
-Please run \"kernel-set-default\" to set default."
-fi
 echo "
 A script is provided in the git repository to uninstall
 Void-kernel-hooks. Run as root or sudo \"uninstall.sh\".
