@@ -4,12 +4,13 @@
 # Hook to reset broken links set previously by 30-update-links
 # If broken, links to most recently updated kernel.
 
+
 if [[ ! -e "/boot/initramfs-linux.img"  ]] || [[ ! -e "/boot/vmlinuz-linux" ]]; then
 	# existing links are broken
 	echo "Link fallback after kernel removal. May be temporary with reinstalls"
-	ls -c /boot/vmlinuz* | grep -v 'linux' > /tmp/vmlinuz
+	ls -c /boot/vmlinu* | grep -v '\-linux' > /tmp/vmlinuz
 	while IFS= read -r vmline; do
-    		versn_match=$(cut -d'-' -f2 <<< $vmline)
+    		versn_match=$(cut -d'-' -f2- <<< $vmline)
 		if [[ -e "/boot/initramfs-${versn_match}.img" ]]; then
 			ln -svf /boot/initramfs-${versn_match}.img /boot/initramfs-linux.img 
 			ln -svf $vmline /boot/vmlinuz-linux
