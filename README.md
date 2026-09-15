@@ -9,6 +9,7 @@ The default will link to the most recently installed/updated kernel for a chosen
 - Name assigned to default kernel never changes (update-grub becomes optional)
 - Older kernels automatically purged with updates (prevents clutter in /boot)
 - Default stays with preferred kernel series (easier to have multiple series)
+- Still offers option to ignore series/version and always make most recently installed/updated kernel the default
 
 ## Installation
 xbps and bash are required. The scripts included here are designed to be placed in respective subdirectories of /etc/kernel.d/. **Do NOT replace entire subdirectories because other essential kernel hooks will be erased which are not included here.**  To install, download all files in the repo, or:
