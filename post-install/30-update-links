@@ -8,8 +8,7 @@
 # the "kernel-set-default" script. Link names "vmlinuz-linux"
 # and "initramfs-linux.img" are invariant. 
 #
-# PKGNAME="$1" # Not used
-VERSION="$2"
+# VERSN used here is oblivious to $2 VERSION parameter passed to hook
 
 if [ -s /etc/krnl-series-default ]; then 
 	series_def_verbose=$(cat /etc/krnl-series-default)
@@ -22,44 +21,45 @@ if [ -s /etc/krnl-series-default ]; then
 	# is installed/valid?
 	valid_pkg=$(xbps-query -p state $pkgdefault)
 	if [[ $valid_pkg = "installed" ]] || [[ $valid_pkg = "unpacked" ]]; then
-		dflt_versn=$(xbps-query -p pkgver $pkgdefault | cut -d'-' -f2)
-		linkvm_versn=$(readlink /boot/vmlinuz-linux | cut -d'-' -f2)
-		linkinit_versn=$(readlink /boot/initramfs-linux.img | cut -d'-' -f2 | sed s/.img//)
+		dflt_versn=$(xbps-query -p pkgver $pkgdefault | cut -d'-' -f2-)
+		linkvm_versn=$(readlink /boot/vmlinuz-linux | cut -d'-' -f2-)
+		linkinit_versn=$(readlink /boot/initramfs-linux.img | cut -d'-' -f2- | sed s/.img//)
 		if [[ $linkvm_versn = $dflt_versn ]] && [[ $linkinit_versn = $dflt_versn ]]; then
-			VERSION="" # make no change
+			VERSN="" # make no change
 			old_default=$(readlink /boot/vmlinuz-linux | cut -d'/' -f3)
-			echo "==========
+			echo "================
 The boot default xbps kernel series is:  \"$series_def_verbose\"
 Default link \"vmlinuz-linux\" to \"$old_default\" unchanged"
 		else 
-			VERSION=$dflt_versn
-			echo "==========
+			VERSN=$dflt_versn
+			echo "================
 The \"vmlinuz-linux\" default will link to the current kernel for
 --  $series_def_verbose   --"
 		fi
 	else
 		rm -f /etc/krnl-series-default
-		echo "==========
+		echo "================
 Default \"${series_def_verbose}\" is invalid or not currently installed
 Default kernel series reset to none.
 The last kernel installed or updated will become boot default."
 	fi
 else
-	echo "==========
-Warning!  No preferred kernel series default exists
+	echo "================	
+No preferred kernel series is set for boot
 The last kernel installed or updated will become boot default"
 fi 
-if [[ $VERSION != "" ]]; then
-	ln -sf /boot/initramfs-${VERSION}.img /boot/initramfs-linux.img
-	ln -sf /boot/vmlinuz-${VERSION} /boot/vmlinuz-linux
+if [[ $VERSN != "" ]]; then
+	VMLIN_PATH=$(ls /boot/vmlinu*-${VERSN} | head -n1) # limit 1, either linux or linuz
+	ln -sf /boot/initramfs-${VERSN}.img /boot/initramfs-linux.img
+	ln -sf $VMLIN_PATH /boot/vmlinuz-linux
 fi
 if [[ ! -e "/boot/initramfs-linux.img"  ]] || [[ ! -e "/boot/vmlinuz-linux" ]]; then
 	# existing or new Links are broken
-	echo "Missing expected kernel or initramfs files
-Linking default to latest fallback in /boot" 
-	ls -c /boot/vmlinuz* | grep -v 'linux' > /tmp/vmlinuz
+	echo "Missing expected link targets. Linking default to latest fallback
+   in /boot. (Temporary if multiple kernels updating)"
+	ls -c /boot/vmlinu* | grep -v '\-linux' > /tmp/vmlinuz
 	while IFS= read -r vmline; do
-    		versn_match=$(cut -d'-' -f2 <<< $vmline)
+    		versn_match=$(cut -d'-' -f2- <<< $vmline)
 		if [[ -e "/boot/initramfs-${versn_match}.img" ]]; then
 			ln -sf /boot/initramfs-${versn_match}.img /boot/initramfs-linux.img 
 			ln -sf $vmline /boot/vmlinuz-linux
@@ -68,10 +68,10 @@ Linking default to latest fallback in /boot"
 	done </tmp/vmlinuz
 	rm -f /tmp/vmlinuz
 fi
-echo "To change default setting, run:  \"kernel-set-default\"
-=========="
 linkvm=$(readlink /boot/vmlinuz-linux)
-linkinit=$(readlink /boot/initramfs-linux.img) 
-echo "/boot/initramfs-linux.img -> $linkinit
-/boot/vmlinuz-linux -> $linkvm"
+linkinit=$(readlink /boot/initramfs-linux.img)
+echo "To change default setting, run:  \"kernel-set-default\"
+/boot/initramfs-linux.img -> $linkinit
+/boot/vmlinuz-linux -> $linkvm
+================"
 exit $?
