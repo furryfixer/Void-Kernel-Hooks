@@ -27,24 +27,24 @@ if [ -s /etc/krnl-series-default ]; then
 		if [[ $linkvm_versn = $dflt_versn ]] && [[ $linkinit_versn = $dflt_versn ]]; then
 			VERSN="" # make no change
 			old_default=$(readlink /boot/vmlinuz-linux | cut -d'/' -f3)
-			echo "================
+			echo "-------------------------
 The boot default xbps kernel series is:  \"$series_def_verbose\"
 Default link \"vmlinuz-linux\" to \"$old_default\" unchanged"
 		else 
 			VERSN=$dflt_versn
-			echo "================
+			echo "-------------------------
 The \"vmlinuz-linux\" default will link to the current kernel for
 --  $series_def_verbose   --"
 		fi
 	else
 		rm -f /etc/krnl-series-default
-		echo "================
+		echo "-------------------------
 Default \"${series_def_verbose}\" is invalid or not currently installed
 Default kernel series reset to none.
 The last kernel installed or updated will become boot default."
 	fi
 else
-	echo "================	
+	echo "-------------------------	
 No preferred kernel series is set for boot
 The last kernel installed or updated will become boot default"
 fi 
@@ -73,5 +73,5 @@ linkinit=$(readlink /boot/initramfs-linux.img)
 echo "To change default setting, run:  \"kernel-set-default\"
 /boot/initramfs-linux.img -> $linkinit
 /boot/vmlinuz-linux -> $linkvm
-================"
+-------------------------"
 exit $?
